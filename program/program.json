@@ -1,0 +1,10 @@
+{
+    "program": "staking_maxpia_0814.aleo",
+    "version": "0.0.0",
+    "description": "",
+    "development": {
+        "private_key": "",
+        "address": "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"
+    },
+    "license": "MIT"
+}
