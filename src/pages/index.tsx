@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import type { NextPageWithLayout } from '@/types';
 import { NextSeo } from 'next-seo';
 import Layout from '@/layouts/_layout';
 import Button from '@/components/ui/button';
 import { ImageSlider } from '@/components/ui/image-slider';
 import useSWR from 'swr';
+import {safeParseInt } from '@/lib/util';
+
 import { TESTNET3_API_URL, getHeight, getJSON, getMintBlock, getMintStatus, getUnmintedNFTs, getWhitelist } from '@/aleo/rpc';
 import { useWallet } from '@demox-labs/aleo-wallet-adapter-react';
 import { LeoWalletAdapter } from '@demox-labs/aleo-wallet-adapter-leo';
@@ -13,6 +15,8 @@ import { NFTProgramId } from '@/aleo/nft-program';
 import { getRandomElement } from '@/lib/util';
 import MintCountdown from '@/components/mint/countdown';
 import { time } from 'console';
+import Base from '@/components/ui/base';
+import { getMappingValueU32 } from '@/aleo/rpc';
 
 type SectionProps = {
   title: string;
@@ -60,18 +64,25 @@ const DEFAULT_IMAGES = [
   'https://aleo-nft-maxpia.vercel.app/nft/21.png',
 ]
 
-const MintPage: NextPageWithLayout = () => {
+const StakePage: NextPageWithLayout = () => {
   const { wallet, publicKey } = useWallet();
-  const { data, error, isLoading } = useSWR('getMintStatus', () => getMintStatus(TESTNET3_API_URL));
-  const { data: unmintedNFTs, error: nftError, isLoading: nftIsLoading} = useSWR('unmintedNfts', () => getUnmintedNFTs(TESTNET3_API_URL));
-  const { data: whiteList, error: whitelistError, isLoading: whitelistIsLoading } = useSWR('whitelist', () => getWhitelist(TESTNET3_API_URL));
-  const { data: height, error: heightError, isLoading: heightIsLoading } = useSWR('height', () => getHeight(TESTNET3_API_URL));
-  const { data: mintBlock, error: mintBlockError, isLoading: mintBlockIsLoading } = useSWR('getMintBlock', () => getMintBlock(TESTNET3_API_URL));
 
   let [transactionId, setTransactionId] = useState<string | undefined>();
-  let [nftImage, setNFTImage] = useState<string | undefined>();
   let [status, setStatus] = useState<string | undefined>();
-  let [errorMessage, setErrorMessage] = useState<string | undefined>();
+
+  let [mint, setMint] = useState(0);
+  let [stake, setStake] = useState(0);
+  let [withdraw, setWithdraw] = useState(0);
+  let [earn, setEarn] = useState(0);
+  let [fee, setFee] = useState<string>('4.52');
+
+  const { data: account, error: accountError, isLoading: accountIsLoading} = useSWR('programData', () => getMappingValueU32(NFTProgramId, "account", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  console.log("account", account)
+  const { data: staked, error: stakedError, isLoading: stakedIsLoading} = useSWR('programData', () => getMappingValueU32(NFTProgramId, "staked", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  console.log("staked", staked)
+  const { data: reward, error: rewardError, isLoading: rewardIsLoading} = useSWR('programData', () => getMappingValueU32(NFTProgramId, "reward", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  console.log("reward", reward)
+
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
@@ -89,22 +100,19 @@ const MintPage: NextPageWithLayout = () => {
     };
   }, [transactionId]);
 
+
+
   const handleMint = async () => {
     if (!publicKey) throw new WalletNotConnectedError();
-
-    if (!data || !unmintedNFTs) throw new Error('No current mint status');
-
-    const nftToMint: any = getRandomElement(unmintedNFTs);
-    const tokenId = nftToMint.inputs[0].value.replace(/\r?\n|\r/g, '');
-    const inputs = [tokenId, nftToMint.inputs[1].value];
+    const inputs = ["aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn",mint.toString()];
 
     const aleoTransaction = Transaction.createTransaction(
       publicKey,
       WalletAdapterNetwork.Testnet,
       NFTProgramId,
-      'mint',
+      'mint_public',
       inputs,
-      Math.floor(4_250_000),
+      Math.floor(parseFloat(fee) * 1_000_000),
     );
 
     const txId =
@@ -112,9 +120,69 @@ const MintPage: NextPageWithLayout = () => {
         aleoTransaction
       )) || '';
     setTransactionId(txId);
+  };
 
-    const properties = await getJSON(`https://${nftToMint.url}`);
-    setNFTImage(properties.image);
+  const handleStake = async () => {
+    if (!publicKey) throw new WalletNotConnectedError();
+
+    const inputs = [stake];
+
+    const aleoTransaction = Transaction.createTransaction(
+      publicKey,
+      WalletAdapterNetwork.Testnet,
+      NFTProgramId,
+      'stake',
+      inputs,
+      Math.floor(parseFloat(fee) * 1_000_000),
+    );
+
+    const txId =
+      (await (wallet?.adapter as LeoWalletAdapter).requestTransaction(
+        aleoTransaction
+      )) || '';
+    setTransactionId(txId);
+  };
+
+  const handleWithdraw = async () => {
+    if (!publicKey) throw new WalletNotConnectedError();
+
+    const inputs = [withdraw];
+
+    const aleoTransaction = Transaction.createTransaction(
+      publicKey,
+      WalletAdapterNetwork.Testnet,
+      NFTProgramId,
+      'withdraw',
+      inputs,
+      Math.floor(parseFloat(fee) * 1_000_000),
+    );
+
+    const txId =
+      (await (wallet?.adapter as LeoWalletAdapter).requestTransaction(
+        aleoTransaction
+      )) || '';
+    setTransactionId(txId);
+  };
+
+  const handleEarn = async () => {
+    if (!publicKey) throw new WalletNotConnectedError();
+
+    const inputs = [earn];
+
+    const aleoTransaction = Transaction.createTransaction(
+      publicKey,
+      WalletAdapterNetwork.Testnet,
+      NFTProgramId,
+      'earn',
+      inputs,
+      Math.floor(parseFloat(fee) * 1_000_000),
+    );
+
+    const txId =
+      (await (wallet?.adapter as LeoWalletAdapter).requestTransaction(
+        aleoTransaction
+      )) || '';
+    setTransactionId(txId);
   };
 
   const getTransactionStatus = async (txId: string) => {
@@ -124,52 +192,133 @@ const MintPage: NextPageWithLayout = () => {
     setStatus(status);
   };
 
-  let timeToMint = 0;
-  if (height && mintBlock) {
-    timeToMint = (mintBlock.block - height) * 15_000; // 15 seconds per block
-  }
-
-  let sliderImages = DEFAULT_IMAGES;
-  if (nftImage) {
-    sliderImages = [nftImage];
-  }
 
   return (
     <>
       <NextSeo
-        title="Leo Wallet | Mint NFTs"
-        description="Mint an NFT using the Leo Wallet"
+        title="Aleo | Token Staking"
+        description="Stake token using the Leo Wallet"
       />
-      <div className="mx-auto max-w-md px-4 mt-12 pb-14 sm:px-6 sm:pb-20 sm:pt-12 lg:px-8 xl:px-10 2xl:px-0">
+      <div className="mx-auto px-4 mt-12 pb-14 sm:px-6 sm:pb-20 sm:pt-12 lg:px-8 xl:px-10 2xl:px-0">
         <h2 className="mb-14 text-lg font-medium uppercase text-center tracking-wider text-gray-900 dark:text-white sm:mb-10 sm:text-2xl">
-          Aleo NFT Maxpia
+          Aleo Staking Maxpia
         </h2>
-        {timeToMint > 0 && (
-          <div className='flex justify-center mb-6'>
-            <MintCountdown date={Date.now() + timeToMint} />
+
+
+
+<Base key="form">
+      <div className='flex'>
+          <div className='px-4 w-2/2'>
+          <div className='text-center text-lg'>Token Staking</div>
+              
+          <label className="flex w-full items-center justify-between py-4">
+                Token Amount:
+                {account?.toString()}
+              </label>
+
+              <label className="flex w-full items-center justify-between py-4">
+                Staked:
+                {staked?.toString()}
+              </label>
+
+              <label className="flex w-full items-center justify-between py-4">
+                Reward:
+                {reward?.toString()}
+              </label>
+
+
+              <label className="flex w-full items-center justify-between py-4">
+                Fee:
+                <input
+                  className="h-11 w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
+                  onChange={(event) => {
+                    if (/^\d*(\.\d*)?$/.test(event.currentTarget.value)) { setFee(event.currentTarget.value)}}}
+                  value={fee}
+                />
+              </label>
+
+
+            <label className="flex w-full items-center justify-between py-4">
+                Mint:
+                <input
+                  className="h-11 w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
+                  placeholder="mint"
+                  onChange={(event) => setMint(safeParseInt(event.currentTarget.value))}
+                  value={mint}
+                />
+                &nbsp;
+                <Button
+                  disabled={!publicKey || !fee}
+                  className="shadow-card dark:bg-gray-700 md:h-10 md:px-5 xl:h-12 xl:px-7"
+                  onClick={() => handleMint()}
+                >
+                  {!publicKey ? 'Connect Your Wallet' : 'Mint'}
+                </Button>
+              </label>
+
+                 <label className="flex w-full items-center justify-between py-4">
+                Stake:
+                <input
+                  className="h-11 w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
+                  placeholder="Fee (in microcredits)"
+                  onChange={(event) => setStake(safeParseInt(event.currentTarget.value))}
+                  value={stake}
+                />
+                &nbsp;
+                <Button
+                  disabled={!publicKey || !fee}
+                  className="shadow-card dark:bg-gray-700 md:h-10 md:px-5 xl:h-12 xl:px-7"
+                  onClick={() => handleStake()}
+                >
+                  {!publicKey ? 'Connect Your Wallet' : 'Stake'}
+                </Button>
+              </label>
+         
+              <br></br>
+
+              <label className="flex w-full items-center justify-between py-4">
+                Earn:
+                <input
+                  className="h-11 w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
+                  placeholder="Fee (in microcredits)"
+                  onChange={(event) => setEarn(safeParseInt(event.currentTarget.value))}
+                  value={earn}
+                />
+                &nbsp;
+                <Button
+                  disabled={!publicKey || !fee}
+                  className="shadow-card dark:bg-gray-700 md:h-10 md:px-5 xl:h-12 xl:px-7"
+                  onClick={() => handleEarn()}
+                >
+                  {!publicKey ? 'Connect Your Wallet' : 'Earn'}
+                </Button>
+              </label>
+         
+              <br></br>
+
+              <label className="flex w-full items-center justify-between py-4">
+                Withraw:
+                <input
+                  className="h-11 w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
+                  onChange={(event) => setWithdraw(safeParseInt(event.currentTarget.value))}
+                  value={withdraw}
+                />
+                &nbsp;
+                <Button
+                  disabled={!publicKey || !fee}
+                  type="submit"
+                  className="shadow-card dark:bg-gray-700 md:h-10 md:px-5 xl:h-12 xl:px-7"
+                >
+                  {!publicKey ? 'Connect Your Wallet' : 'Withraw'}
+                </Button>
+              </label> 
           </div>
-        )}
-        <ImageSlider images={sliderImages} interval={5000} />
-        {data !== undefined && (
-          <div className='flex justify-center my-8'>
-            <Button
-              className="text-xl shadow-card dark:bg-gray-700 md:h-10 md:px-5 xl:h-12 xl:px-7"
-              size='large'
-              disabled={!data.active || !publicKey}
-              onClick={() => handleMint()}
-            >
-                {!publicKey ? 'Connect Your Wallet' : (data.active ? 'MINT NOW' : 'GET READY')}
-            </Button>
-          </div>
-        )}
+        </div>
+
+      </Base>
         {transactionId && (
           <div className='text-white text-center'>
             <div>{`Transaction status: ${status}`}</div>
-          </div>
-        )}
-        {whiteList && publicKey && !transactionId && (
-          <div className='text-white text-center'>
-            <div>{whiteList.filter((elm: any) => elm.address === publicKey).length > 0 ? `You're on the whitelist!` : `You're not on the whitelist!`}</div>
           </div>
         )}
       </div>
@@ -177,8 +326,8 @@ const MintPage: NextPageWithLayout = () => {
   );
 };
 
-MintPage.getLayout = function getLayout(page) {
+StakePage.getLayout = function getLayout(page) {
   return <Layout>{page}</Layout>;
 };
 
-export default MintPage;
+export default StakePage;

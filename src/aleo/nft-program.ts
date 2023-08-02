@@ -1,6 +1,6 @@
-export const NFTProgramId = 'aleo_nft_maxpia_0811.aleo';
+export const NFTProgramId = 'staking_maxpia_0811.aleo';
 
-export const NFTProgram = `program aleo_nft_maxpia_0811.aleo;
+export const NFTProgram = `program staking_maxpia_0811.aleo;
 
 struct TokenId:
     data1 as u128;

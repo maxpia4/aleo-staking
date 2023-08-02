@@ -17,18 +17,18 @@ export async function getProgram(programId: string, apiUrl: string): Promise<str
   const program = await client.request('program', {
     id: programId
   });
-
-  const result = await getMappingValueU8(programId, "whitelist", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn")
-  console.log(result) 
   return program;
 }
 
-export async function getMappingValueU8(programId: string, mapping: string, key: string): Promise<Number> {
-
+export async function getMappingValueU32(programId: string, mapping: string, key: string): Promise<Number | null> {
   const result = fetch("https://vm.aleo.org/api/testnet3" + "/program/" + programId + "/mapping/" + mapping + "/" + key)
   .then((response) => response.json())
-  .then((data) => {return toNumber(data.split('u8')[0])});
-
+  .then((data) => {
+    if (data === null) {
+      return 0
+    }
+    return toNumber(data.split('u32')[0])
+  });
   return result;
 }
 
@@ -232,29 +232,6 @@ export const getClient = (apiUrl: string) => {
   );
   return client;
 };
-
-export const getClient2 = (apiUrl: string) => {
-  const client = new JSONRPCClient((jsonRPCRequest: any) =>
-  fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      programId: "aleo_nft_maxpia_0811.aleo",
-    }),
-  }).then((response: any) => {
-      if (response.status === 200) {
-        // Use client.receive when you received a JSON-RPC response.
-        return response.json().then((jsonRPCResponse: any) => client.receive(jsonRPCResponse));
-      } else if (jsonRPCRequest.id !== undefined) {
-        return Promise.reject(new Error(response.statusText));
-      }
-    })
-  );
-  return client;
-};
-
 
 export async function getJSON(url: string): Promise<any> {
   const response = await fetch(url);
