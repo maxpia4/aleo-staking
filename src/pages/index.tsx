@@ -96,7 +96,7 @@ const StakePage: NextPageWithLayout = () => {
       && staked != undefined
       && reward != undefined
     ) {
-      const period = Number(last_block) - Number(last_update_block)
+      const period = Number(last_block) - Number(last_update_block) + 1
       const rewards =  period * Number(staked) * 1
       console.log("period", period)
       console.log("rewards", rewards)
