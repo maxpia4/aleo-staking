@@ -65,6 +65,8 @@ const DEFAULT_IMAGES = [
   'https://aleo-nft-maxpia.vercel.app/nft/21.png',
 ]
 
+const owner_key = "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"
+
 const StakePage: NextPageWithLayout = () => {
   const { wallet, publicKey } = useWallet();
 
@@ -78,12 +80,12 @@ const StakePage: NextPageWithLayout = () => {
   let [rewards, setRewards] = useState<number>(0);
   let [fee, setFee] = useState<string>('7.52');
 
-  const { data: account, error: accountError, isLoading: accountIsLoading} = useSWR('account', () => getMappingValueU32(NFTProgramId, "account", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
-  const { data: staked, error: stakedError, isLoading: stakedIsLoading} = useSWR('staked', () => getMappingValueU32(NFTProgramId, "staked", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  const { data: account, error: accountError, isLoading: accountIsLoading} = useSWR('account', () => getMappingValueU32(NFTProgramId, "account", publicKey ? publicKey : owner_key));
+  const { data: staked, error: stakedError, isLoading: stakedIsLoading} = useSWR('staked', () => getMappingValueU32(NFTProgramId, "staked", publicKey ? publicKey : owner_key));
   console.log("staked", staked)
-  const { data: last_update_block, error: lastUpdateError, isLoading: lastUpdateIsLoading} = useSWR('last_update_block', () => getMappingValueU32(NFTProgramId, "last_update_block", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  const { data: last_update_block, error: lastUpdateError, isLoading: lastUpdateIsLoading} = useSWR('last_update_block', () => getMappingValueU32(NFTProgramId, "last_update_block", publicKey ? publicKey : owner_key));
   //console.log("last_update_block", last_update_block)
-  const { data: reward, error: rewardsError, isLoading: rewardsIsLoading} = useSWR('reward', () => getMappingValueU32(NFTProgramId, "reward", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  const { data: reward, error: rewardsError, isLoading: rewardsIsLoading} = useSWR('reward', () => getMappingValueU32(NFTProgramId, "reward", publicKey ? publicKey : owner_key));
   console.log("reward", reward)
   const { data: last_block, error: lastBlockError, isLoading: lastBlockIsLoading} = useSWR('last_block', () => getLastBlockHeight());
   //console.log("last_block", last_block)
@@ -228,7 +230,12 @@ const StakePage: NextPageWithLayout = () => {
       <div className='flex'>
           <div className='px-4 w-2/2'>
           <div className='text-center text-lg'>Token Staking</div>
-              
+
+             <label className="flex w-full items-center justify-between py-4">
+                Token Address:
+                {publicKey ? publicKey : owner_key}
+              </label>
+
           <label className="flex w-full items-center justify-between py-4">
                 Token Amount:
                 {account?.toString()}
