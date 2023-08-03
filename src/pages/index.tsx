@@ -322,7 +322,7 @@ const StakePage: NextPageWithLayout = () => {
               <br></br>
 
               <label className="flex w-full items-center justify-between py-4">
-                Withraw:
+                Withdraw:
                 <input
                   className="h-11 w-10/12 appearance-none rounded-lg border-2 border-gray-200 bg-transparent py-1 text-sm tracking-tighter text-gray-900 outline-none transition-all placeholder:text-gray-600 focus:border-gray-900 ltr:pr-5 ltr:pl-10 rtl:pr-10 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-gray-500"
                   onChange={(event) => setWithdraw(safeParseInt(event.currentTarget.value))}
@@ -335,7 +335,7 @@ const StakePage: NextPageWithLayout = () => {
                   className="shadow-card dark:bg-gray-700 md:h-10 md:px-5 xl:h-12 xl:px-7"
                   onClick={() => handleWithdraw()}
                 >
-                  {!publicKey ? 'Connect Your Wallet' : 'Withraw'}
+                  {!publicKey ? 'Connect Your Wallet' : 'Withdraw'}
                 </Button>
               </label> 
           </div>
