@@ -16,7 +16,8 @@ import { getRandomElement } from '@/lib/util';
 import MintCountdown from '@/components/mint/countdown';
 import { time } from 'console';
 import Base from '@/components/ui/base';
-import { getMappingValueU32 } from '@/aleo/rpc';
+import { getMappingValueU32, getLastBlockHeight } from '@/aleo/rpc';
+
 
 type SectionProps = {
   title: string;
@@ -74,15 +75,32 @@ const StakePage: NextPageWithLayout = () => {
   let [stake, setStake] = useState(0);
   let [withdraw, setWithdraw] = useState(0);
   let [earn, setEarn] = useState(0);
-  let [fee, setFee] = useState<string>('4.52');
+  let [rewards, setRewards] = useState<number>(0);
+  let [fee, setFee] = useState<string>('7.52');
 
-  const { data: account, error: accountError, isLoading: accountIsLoading} = useSWR('programData', () => getMappingValueU32(NFTProgramId, "account", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
-  console.log("account", account)
-  const { data: staked, error: stakedError, isLoading: stakedIsLoading} = useSWR('programData', () => getMappingValueU32(NFTProgramId, "staked", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  const { data: account, error: accountError, isLoading: accountIsLoading} = useSWR('account', () => getMappingValueU32(NFTProgramId, "account", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  const { data: staked, error: stakedError, isLoading: stakedIsLoading} = useSWR('staked', () => getMappingValueU32(NFTProgramId, "staked", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
   console.log("staked", staked)
-  const { data: reward, error: rewardError, isLoading: rewardIsLoading} = useSWR('programData', () => getMappingValueU32(NFTProgramId, "reward", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  const { data: last_update_block, error: lastUpdateError, isLoading: lastUpdateIsLoading} = useSWR('last_update_block', () => getMappingValueU32(NFTProgramId, "last_update_block", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
+  //console.log("last_update_block", last_update_block)
+  const { data: reward, error: rewardsError, isLoading: rewardsIsLoading} = useSWR('reward', () => getMappingValueU32(NFTProgramId, "reward", "aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn"));
   console.log("reward", reward)
+  const { data: last_block, error: lastBlockError, isLoading: lastBlockIsLoading} = useSWR('last_block', () => getLastBlockHeight());
+  //console.log("last_block", last_block)
 
+  useEffect(() => {
+    if (last_block != undefined
+      && last_update_block != undefined
+      && staked != undefined
+      && reward != undefined
+    ) {
+      const period = Number(last_block) - Number(last_update_block)
+      const rewards =  period * Number(staked) * 1
+      console.log("period", period)
+      console.log("rewards", rewards)
+      setRewards(rewards + Number(reward))
+    }
+  }, [last_block, last_update_block, staked, reward]);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
@@ -104,7 +122,7 @@ const StakePage: NextPageWithLayout = () => {
 
   const handleMint = async () => {
     if (!publicKey) throw new WalletNotConnectedError();
-    const inputs = ["aleo1rthsgwzrdqhxefshvcfdah5t5wfm5ylkktryvgm08kd5h8yyps8s0xu9fn",mint.toString()];
+    const inputs = [mint.toString()+"u32"];
 
     const aleoTransaction = Transaction.createTransaction(
       publicKey,
@@ -125,7 +143,7 @@ const StakePage: NextPageWithLayout = () => {
   const handleStake = async () => {
     if (!publicKey) throw new WalletNotConnectedError();
 
-    const inputs = [stake];
+    const inputs = [stake.toString()+"u32"];
 
     const aleoTransaction = Transaction.createTransaction(
       publicKey,
@@ -146,7 +164,7 @@ const StakePage: NextPageWithLayout = () => {
   const handleWithdraw = async () => {
     if (!publicKey) throw new WalletNotConnectedError();
 
-    const inputs = [withdraw];
+    const inputs = [withdraw.toString()+"u32"];
 
     const aleoTransaction = Transaction.createTransaction(
       publicKey,
@@ -167,7 +185,7 @@ const StakePage: NextPageWithLayout = () => {
   const handleEarn = async () => {
     if (!publicKey) throw new WalletNotConnectedError();
 
-    const inputs = [earn];
+    const inputs = [earn.toString()+"u32"];
 
     const aleoTransaction = Transaction.createTransaction(
       publicKey,
@@ -223,7 +241,7 @@ const StakePage: NextPageWithLayout = () => {
 
               <label className="flex w-full items-center justify-between py-4">
                 Reward:
-                {reward?.toString()}
+                {rewards?.toString()}
               </label>
 
 
@@ -308,6 +326,7 @@ const StakePage: NextPageWithLayout = () => {
                   disabled={!publicKey || !fee}
                   type="submit"
                   className="shadow-card dark:bg-gray-700 md:h-10 md:px-5 xl:h-12 xl:px-7"
+                  onClick={() => handleWithdraw()}
                 >
                   {!publicKey ? 'Connect Your Wallet' : 'Withraw'}
                 </Button>

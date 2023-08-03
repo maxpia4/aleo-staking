@@ -20,6 +20,18 @@ export async function getProgram(programId: string, apiUrl: string): Promise<str
   return program;
 }
 
+export async function getLastBlockHeight(): Promise<Number | null> {
+  const result = fetch("https://vm.aleo.org/api/testnet3/latest/height")
+  .then((response) => response.json())
+  .then((data) => {
+    if (data === null) {
+      return 0
+    }
+    return toNumber(data)
+  });
+  return result;
+}
+
 export async function getMappingValueU32(programId: string, mapping: string, key: string): Promise<Number | null> {
   const result = fetch("https://vm.aleo.org/api/testnet3" + "/program/" + programId + "/mapping/" + mapping + "/" + key)
   .then((response) => response.json())

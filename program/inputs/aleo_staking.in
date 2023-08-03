@@ -1,0 +1,11 @@
+[mint_public]
+amount: u32 = 10000u32;
+
+[stake]
+amount: u32 = 10000u32;
+
+[withdraw]
+amount: u32 = 500u32;
+
+[earn]
+amount: u32 = 100u32;
