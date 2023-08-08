@@ -1,4 +1,18 @@
-## 🚀 Quick Start
+## 🚀 Staking Aleo Token
+
+<img width="1416" alt="image" src="https://github.com/maxpia4/aleo-staking/assets/139723813/b74e5042-eb42-40dc-84ec-05004f05bdd6">
+
+
+### - Web site : 
+
+https://aleo-staking.vercel.app/
+
+### - Referenced from Art factory
+
+https://github.com/demox-labs/art-factory
+
+
+### 🚀 Quick Start
 
 Ensure you have:
 
@@ -10,7 +24,7 @@ Then run the following:
 ### 1) Clone the repository
 
 ```bash
-git clone https://github.com/demox-labs/art-factory && cd art-factory
+git clone https://github.com/maxpia4/aleo-staking && cd aleo-staking
 ```
 
 ### 2) Install dependencies
@@ -31,9 +45,6 @@ Find the full instructions here: https://github.com/AleoHQ/leo
 
 Run a local server on localhost:3000.
 
-```bash
-yarn dev
-```
 
 
 ### 6) Build
